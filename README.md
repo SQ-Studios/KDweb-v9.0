@@ -12,3 +12,6 @@ Dosyasını bir windowsta çalıştır ve o komutu buraya yani Terminal4.5'e yaz
 işte o zaman giriş için parolayı sana Terminal4.5 söyleyecek...
 
 iyi şanslar!
+# Tüm Sürümlere Nasıl Erişeceğim?
+Şimdilik sadece STAR EDITON olanları paylaşacağım.
+Diğerlerini paylaşmamı istiyorsan bu gönderiyi 20 kişi görmeli.. O zaman eklerim
