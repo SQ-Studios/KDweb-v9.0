@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>KDweb OS - Power Edition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Share Tech Mono', monospace;
+            color: white;
+        }
+
+        #starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+
+        /* PAROLA EKRANI */
+        #login-screen {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; z-index: 10;
+            transition: all 0.8s cubic-bezier(0.6, -0.28, 0.735, 0.045);
+        }
+        .spy-icon { font-size: 80px; margin-bottom: 20px; text-shadow: 0 0 20px #fff; }
+        .login-text { font-size: 24px; margin-bottom: 20px; letter-spacing: 2px; }
+        input[type="password"] {
+            background: rgba(255, 255, 255, 0.1); border: 1px solid #fff;
+            padding: 10px 20px; color: #fff; text-align: center;
+            font-family: 'Share Tech Mono', monospace; outline: none; transition: 0.3s;
+        }
+
+        /* ANA ARAYÜZ */
+        #main-interface {
+            display: none; height: 100vh;
+            grid-template-columns: 200px 1fr;
+            opacity: 0; transform: scale(1.1);
+            transition: 1s ease-out; z-index: 5; position: relative;
+        }
+
+        .sidebar { background: #0a0a0a; padding: 20px; border-right: 1px solid #222; display: flex; flex-direction: column; }
+        
+        .logo {
+            font-size: 26px; font-weight: bold; letter-spacing: 6px;
+            background: linear-gradient(45deg, #8a2be2, #4b0082);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 40px; text-align: left; padding-left: 5px;
+        }
+
+        .nav-item {
+            padding: 12px 10px; margin: 5px 0; cursor: pointer; border-radius: 4px;
+            display: flex; align-items: center; color: #666; transition: 0.3s; font-size: 14px;
+        }
+        .nav-item i { margin-right: 12px; width: 20px; text-align: center; }
+        .nav-item:hover { background: #1a1a1a; color: #fff; }
+        .nav-item.active { background: rgba(138, 43, 226, 0.15); color: #fff; border-left: 3px solid #8a2be2; }
+
+        .content { padding: 40px; overflow-y: auto; }
+
+        /* İNDİRMELER - TÜMÜ GERİ GELDİ */
+        .icon-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 30px; margin-top: 20px;
+        }
+        .icon-item {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            padding: 15px; color: #fff; text-decoration: none;
+        }
+        .icon-item i { font-size: 56px; color: #8a2be2; margin-bottom: 15px; }
+        .icon-item span { font-size: 13px; margin-bottom: 12px; font-weight: bold; height: 35px; overflow: hidden; }
+        
+        .dl-btn {
+            background: linear-gradient(45deg, #8a2be2, #4b0082);
+            color: white; border: none; padding: 8px 15px; border-radius: 4px;
+            font-family: 'Share Tech Mono'; font-size: 11px; cursor: pointer;
+            text-transform: uppercase; transition: 0.3s; width: 100%;
+        }
+        .dl-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px #8a2be2; }
+
+        /* DOSYA GEZGİNİ */
+        .explorer-row {
+            display: grid; grid-template-columns: 50px 1fr 180px;
+            padding: 15px 0; align-items: center; border-bottom: 1px solid #222;
+        }
+        .explorer-row i { color: #8a2be2; font-size: 28px; }
+        .explorer-row span { font-size: 18px; }
+
+        /* TERMINAL - KUTUSUZ & 14 KOD */
+        #terminal-body {
+            background: #000; border: 1px solid #222; height: 450px;
+            padding: 20px; overflow-y: auto; color: #0f0; font-size: 14px;
+        }
+        .terminal-input-line { display: flex; margin-top: 10px; }
+        .terminal-input-line input {
+            background: transparent; border: none; color: #0f0; font-family: 'Share Tech Mono';
+            outline: none; width: 100%; margin-left: 10px;
+        }
+
+        /* AYARLAR */
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #222; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #8a2be2; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .fade-out { opacity: 0 !important; transform: translate(-50%, -50%) scale(2) !important; pointer-events: none; }
+        .show-ui { display: grid !important; opacity: 1 !important; transform: scale(1) !important; }
+    </style>
+</head>
+<body>
+
+    <canvas id="starfield"></canvas>
+
+    <div id="login-screen">
+        <div class="spy-icon"><i class="fas fa-user-secret"></i></div>
+        <div class="login-text">GİZLİ PAROLAYI GİRİN...</div>
+        <input type="password" id="passInput" placeholder="PIN" autofocus>
+    </div>
+
+    <div id="main-interface">
+        <div class="sidebar">
+            <div class="logo">KDWEB</div>
+            <div class="nav-item active" id="btn-home" onclick="showTab('home')"><i class="fas fa-home"></i> Ana Menü</div>
+            <div class="nav-item" id="btn-explorer" onclick="showTab('explorer')"><i class="fas fa-folder-open"></i> Dosya Gezgini</div>
+            <div class="nav-item" id="btn-downloads" onclick="showTab('downloads')"><i class="fas fa-download"></i> İndirmeler</div>
+            <div class="nav-item" id="btn-terminal" onclick="showTab('terminal')"><i class="fas fa-terminal"></i> Terminal</div>
+            <div class="nav-item" id="btn-ai" onclick="showTab('ai')" style="display:none;"><i class="fas fa-comment-dots"></i> AI</div>
+            <div class="nav-item" id="btn-settings" onclick="showTab('settings')"><i class="fas fa-cog"></i> Ayarlar</div>
+        </div>
+
+        <div class="content" id="mainContent">
+            <h1>SİSTEM ÇEVRİMİÇİ</h1>
+            <p>KDweb OS v2.4 | Terminal ve Dosya Modülleri Güncellendi.</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+        for(let i=0; i<150; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2, v: Math.random()*1});
+        function draw() {
+            ctx.fillStyle = 'black'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle = 'white';
+            stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); ctx.fill(); s.y += s.v; if(s.y > canvas.height) s.y = 0; });
+            requestAnimationFrame(draw);
+        }
+        draw();
+
+        const passInput = document.getElementById('passInput');
+        passInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter' && passInput.value === 'kSdaRkenter19') {
+                document.getElementById('login-screen').classList.add('fade-out');
+                setTimeout(() => {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('main-interface').classList.add('show-ui');
+                }, 800);
+            }
+        });
+
+        function showTab(tab) {
+            const content = document.getElementById('mainContent');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('btn-' + tab).classList.add('active');
+
+            if(tab === 'downloads') {
+                content.innerHTML = `
+                    <h2>İndirmeler</h2>
+                    <div class="icon-grid">
+                        ${createDLIcon("Stools", "https://mega.nz/file/4yVwkL6Y#j_PWt3X4AwRtiK9DgSQc9oernXgLzI8UZ4ysKCgFRwA")}
+                        ${createDLIcon("KSWebX", "https://mega.nz/file/46dxxAwB#7oXgOOJpOl_8D4Az4Lqid25uDD4f_va6hnzm4UHzfQI")}
+                        ${createDLIcon("NAp.vbs: English", "https://mega.nz/file/0nNXhDJa#zpOT1lC0YFJ18wndMkMtS-QOvTGgFhzvlzkjXBJqebg")}
+                        ${createDLIcon("err.vbe", "https://mega.nz/file/93MX2RzQ#pYYJk72Ma81L7J-sPABJRTwF0je6mseGxEKZgxOioK0")}
+                        ${createDLIcon("Terminal4.5 Pro", "https://mega.nz/file/oudTFbpb#-A3ArzrNWbEp6H2nDvCJpoC7N0ekuZeBt4US524c16I")}
+                        ${createDLIcon("Hackpost Pro", "https://mega.nz/file/R2cxwBBY#4np1S4yUfgzA6PmaN3E1Zmm6Vl6HzUo0avkWbrfo26k")}
+                        ${createDLIcon("Hackpost", "https://mega.nz/file/g21mwCjS#tEE8O9GZhRFfjSSgusfJ6TKSVbCaKWa8AwFNLHvA4Xs")}
+                        ${createDLIcon("HackHost", "https://mega.nz/file/B6E0iDZb#cT0HLwt1dXUqcs7IkL_FljWIPVbWArAaWyUH3kvzFbk")}
+                        ${createDLIcon("BtcB Pro", "https://mega.nz/file/I6FTULiS#tNAl6EEX5zRZpmXaK_FTXJ63edleW0qfVJsUyaIPM7A")}
+                    </div>
+                `;
+            } else if(tab === 'explorer') {
+                content.innerHTML = `<h2>Dosya Gezgini</h2><div style="margin-top:20px;">${createExpRow("Bitcoin_Breaking.bat")}${createExpRow("Dock.bat")}${createExpRow("HackHost.bat")}${createExpRow("Hackpost_Pro.bat")}</div>`;
+            } else if(tab === 'terminal') {
+                content.innerHTML = `<h2>Terminal v2.4</h2><div id="terminal-body"><div id="terminal-out">ROOT@KDweb: Kernel Online. 'help' yazarak başla.</div><div class="terminal-input-line"><span>ROOT@KDweb:~#</span><input type="text" id="term-input" autofocus autocomplete="off"></div></div>`;
+                initTerminal();
+            } else if(tab === 'settings') {
+                content.innerHTML = `<h2>Ayarlar</h2><div class="setting-row"><span>Gelişmiş Mod (AI)</span><label class="switch"><input type="checkbox" id="aiSwitch" ${document.getElementById('btn-ai').style.display !== 'none' ? 'checked' : ''} onchange="toggleAI(this)"><span class="slider"></span></label></div><div class="setting-row"><span>Dil</span><select style="background:#111; color:white; border:1px solid #333;"><option>Türkçe</option><option>English</option></select></div>`;
+            } else if(tab === 'ai') {
+                content.innerHTML = `<div style="text-align:center; margin-top:50px;"><i class="fas fa-robot" style="font-size:60px; color:#8a2be2; margin-bottom:20px;"></i><h2>AI Search</h2><div style="display:flex; justify-content:center; gap:10px;"><input type="text" id="ai-search" placeholder="Google'da ara..." style="width:60%; padding:10px; background:#111; border:1px solid #8a2be2; color:white;"><button onclick="aiSearch()" class="dl-btn" style="width:100px;">ARA</button></div></div>`;
+            } else {
+                content.innerHTML = `<h1>SİSTEM ÇEVRİMİÇİ</h1><p>KDweb OS v2.4 | Hoş geldin Operator.</p>`;
+            }
+        }
+
+        function createDLIcon(n, l) { return `<div class="icon-item"><i class="fas fa-file-alt"></i><span>${n}</span><button class="dl-btn" onclick="window.open('${l}','_blank')">ŞİMDİ İNDİR</button></div>`; }
+        function createExpRow(n) { return `<div class="explorer-row"><i class="fas fa-file-code"></i><span>${n}</span><button class="dl-btn" onclick="alert('${n} açılıyor...')">DOSYAYI GÖRÜNTÜLE</button></div>`; }
+        function toggleAI(cb) { document.getElementById('btn-ai').style.display = cb.checked ? 'flex' : 'none'; }
+        function aiSearch() { const q = document.getElementById('ai-search').value; if(q) window.open('https://google.com/search?q='+q); }
+
+        function initTerminal() {
+            const input = document.getElementById('term-input');
+            const out = document.getElementById('terminal-out');
+            input.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') {
+                    const cmd = input.value.trim().toLowerCase();
+                    let res = `<br>ROOT@KDweb:~# ${input.value}`;
+                    
+                    if(cmd === 'help') res += `<br>14 Komut: help, ls, clear, whoami, sysinfo, hack -t, date, ping, calc, ipconfig, color, echo, exit, ver`;
+                    else if(cmd === 'ls') res += `<br>Bitcoin_Breaking.bat  Dock.bat  HackHost.bat  Hackpost_Pro.bat`;
+                    else if(cmd === 'clear') { out.innerHTML = ""; res = ""; }
+                    else if(cmd === 'whoami') res += `<br>root_operator`;
+                    else if(cmd === 'sysinfo') res += `<br>OS: KDweb 2.4 | Kernel: x64_Gold`;
+                    else if(cmd === 'hack -t') res += `<br><span style="color:red">DENENİYOR... ERİŞİM ONAYLANDI.</span>`;
+                    else if(cmd === 'date') res += `<br>${new Date().toLocaleString()}`;
+                    else if(cmd === 'ping') res += `<br>Ping: 12ms`;
+                    else if(cmd === 'ipconfig') res += `<br>IPv4: 192.168.1.100`;
+                    else if(cmd === 'color') res += `<br>Renk şeması yeşil olarak sabitlendi.`;
+                    else if(cmd.startsWith('echo ')) res += `<br>${input.value.substring(5)}`;
+                    else if(cmd === 'exit') res += `<br>Terminal oturumu kapatılamaz: Root yetkisi gerekiyor.`;
+                    else if(cmd === 'ver') res += `<br>KDweb OS [Version 2.4.0.12]`;
+                    else if(cmd.startsWith('calc ')) { try { res += `<br>Sonuç: ${eval(cmd.replace('calc ',''))}`; } catch { res += `<br>Hesaplama hatası.`; } }
+                    else res += `<br>'${cmd}' tanınmıyor. 'help' yazın.`;
+
+                    out.innerHTML += res;
+                    input.value = "";
+                    document.getElementById('terminal-body').scrollTop = document.getElementById('terminal-body').scrollHeight;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
